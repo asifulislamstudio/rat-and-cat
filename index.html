@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ant Killing Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      cursor: url('./cat1.png'), auto;
+      
+    }
+
+    #gameScreen {
+      position: relative;
+      width: 80vw;
+      height: 80vh;
+      background-color: black;
+      overflow: hidden;
+      margin: auto;
+      margin-top: 5%;
+    }
+
+    .ant {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: url('./rat.gif') no-repeat center center;
+      background-size: contain;
+      animation: moveAnt linear forwards;
+      cursor: url('./cat2.png'), auto;
+    }
+
+    .ant.killed {
+      background: url('./blood.png') no-repeat center center;
+      background-size: cover;
+      animation: none;
+    }
+
+    @keyframes moveAnt {
+      from {
+        left: 0;
+      }
+      to {
+        left: 100vw;
+      }
+    }
+
+    #score {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: 5px;
+    }
+
+    #speedControl {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 5px;
+    }
+
+    #speedControl input {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameScreen">
+    <div id="score">Score: 0</div>
+    <div id="speedControl">Speed: <input type="range" id="speedRange" min="1" max="10" value="5"></div>
+  </div>
+
+  <script>
+    const gameScreen = document.getElementById('gameScreen');
+    const scoreElement = document.getElementById('score');
+    const speedRange = document.getElementById('speedRange');
+    let score = 0;
+    let speed = 5; // Default speed
+
+    speedRange.addEventListener('input', (e) => {
+      speed = e.target.value;
+    });
+
+    function spawnAnt() {
+      const ant = document.createElement('div');
+      ant.classList.add('ant');
+
+      // Set ant speed dynamically
+      ant.style.animationDuration = `${11 - speed}s`;
+
+      // Randomize ant's position
+      const topPosition = Math.random() * (window.innerHeight - 40);
+      ant.style.top = `${topPosition}px`;
+      ant.style.left = '0';
+
+      // When cursor hovers, change to sandal
+      ant.addEventListener('mouseover', () => {
+        document.body.style.cursor = "url('https://upload.wikimedia.org/wikipedia/commons/2/23/Sandal_cursor.png'), auto";
+      });
+
+      ant.addEventListener('mouseout', () => {
+        document.body.style.cursor = "url('https://upload.wikimedia.org/wikipedia/commons/2/23/Sandal_cursor.png'), auto";
+      });
+
+      // When clicked, "kill" the ant
+      ant.addEventListener('click', () => {
+        ant.classList.add('killed'); // Change to blood splatter
+        setTimeout(() => ant.remove(), 500); // Remove the ant after 500ms
+        score += 1; // Increment the score
+        scoreElement.textContent = `Score: ${score}`;
+      });
+
+      gameScreen.appendChild(ant);
+
+      // Remove ant after animation ends (if not clicked)
+      setTimeout(() => {
+        if (ant.parentElement) {
+          ant.remove();
+        }
+      }, (11 - speed) * 1000);
+    }
+
+    // Spawn ants every 1 second
+    setInterval(spawnAnt, 1000);
+  </script>
+</body>
+</html>
