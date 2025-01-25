@@ -9,25 +9,25 @@
       margin: 0;
       overflow: hidden;
       font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
+      background: url('./bg.jpeg') no-repeat center center;
+      background-size: cover;
       cursor: url('./cat1.png'), auto;
-      
     }
 
     #gameScreen {
       position: relative;
       width: 80vw;
       height: 80vh;
-      background-color: black;
+      background-color: #000000;
       overflow: hidden;
       margin: auto;
-      margin-top: 8%;
+      margin-top: 60px;
     }
 
     .ant {
       position: absolute;
-      width: 60px;
-      height: 60px;
+      width: 100px;
+      height: 100px;
       background: url('./rat.gif') no-repeat center center;
       background-size: contain;
       animation: moveAnt linear forwards;
@@ -36,7 +36,7 @@
 
     .ant.killed {
       background: url('./blood.png') no-repeat center center;
-      background-size: cover;
+      background-size: contain;
       animation: none;
     }
 
@@ -45,22 +45,26 @@
         left: 0;
       }
       to {
-        left: 100vw;
+        left: 80vw;
       }
     }
 
-    #score {
+    #score, #missed {
       position: fixed;
       top: 10px;
-      left: 10px;
       background: rgba(0, 0, 0, 0.7);
       color: #fff;
       padding: 10px 20px;
       font-size: 18px;
       border-radius: 5px;
-      display: flex;
-      justify-items: center;
-      justify-content: center;
+    }
+
+    #score {
+      left: 10px;
+    }
+
+    #missed {
+      left: 200px;
     }
 
     #speedControl {
@@ -72,45 +76,86 @@
       padding: 10px 20px;
       font-size: 14px;
       border-radius: 5px;
-     
     }
 
     #speedControl input {
       margin-left: 10px;
     }
 
-    .namea{
-        
-        width: 100vh;
-        margin: auto;
-        margin-top: 20px;
-        color: white;
+    #modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    #modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #modal button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-    <div>
-        
-    </div>
   <div id="gameScreen">
-    <div id="score">Score: 0
-    </div>
-    <h1 class="namea" >Kill The Mouse </h1>
-    <div id="speedControl">
-        <h3>Creator : Asiful Islam</h3>
-        Speed: <input type="range" id="speedRange" min="1" max="10" value="5">
-        
-    </div>
-   
+    <div id="score">Score: 0</div>
+    <div id="missed">Missed: 0</div>
+    <div id="speedControl">Speed: <input type="range" id="speedRange" min="1" max="10" value="5"></div>
   </div>
-  
+
+  <div id="modal">
+    <div id="modalMessage"></div>
+    <button id="restartButton">Restart</button>
+  </div>
+
+  <footer>
+    Created by Asiful Islam
+  </footer>
+
   <script>
     const gameScreen = document.getElementById('gameScreen');
     const scoreElement = document.getElementById('score');
+    const missedElement = document.getElementById('missed');
     const speedRange = document.getElementById('speedRange');
+    const modal = document.getElementById('modal');
+    const modalMessage = document.getElementById('modalMessage');
+    const restartButton = document.getElementById('restartButton');
     let score = 0;
+    let missedAnts = 0;
     let speed = 5; // Default speed
-   
+
     speedRange.addEventListener('input', (e) => {
       speed = e.target.value;
     });
@@ -122,19 +167,10 @@
       // Set ant speed dynamically
       ant.style.animationDuration = `${11 - speed}s`;
 
-      // Randomize ant's position
-      const topPosition = Math.random() * (window.innerHeight - 40);
+      // Randomize ant's position within the game screen bounds
+      const topPosition = Math.random() * (gameScreen.clientHeight - 100);
       ant.style.top = `${topPosition}px`;
       ant.style.left = '0';
-
-      // When cursor hovers, change to sandal
-      ant.addEventListener('mouseover', () => {
-        document.body.style.cursor = "url('https://upload.wikimedia.org/wikipedia/commons/2/23/Sandal_cursor.png'), auto";
-      });
-
-      ant.addEventListener('mouseout', () => {
-        document.body.style.cursor = "url('https://upload.wikimedia.org/wikipedia/commons/2/23/Sandal_cursor.png'), auto";
-      });
 
       // When clicked, "kill" the ant
       ant.addEventListener('click', () => {
@@ -142,6 +178,10 @@
         setTimeout(() => ant.remove(), 500); // Remove the ant after 500ms
         score += 1; // Increment the score
         scoreElement.textContent = `Score: ${score}`;
+
+        if (score >= 100) {
+          showModal('Congratulations! You scored 100!', true);
+        }
       });
 
       gameScreen.appendChild(ant);
@@ -150,9 +190,34 @@
       setTimeout(() => {
         if (ant.parentElement) {
           ant.remove();
+          missedAnts += 1;
+          missedElement.textContent = `Missed: ${missedAnts}`;
+
+          if (missedAnts >= 10) {
+            showModal('Game Over! Too many Rats escaped.', true);
+          }
         }
       }, (11 - speed) * 1000);
     }
+
+    function showModal(message, restart = false) {
+      modalMessage.textContent = message;
+      modal.classList.add('active');
+
+      if (restart) {
+        restartButton.style.display = 'block';
+      } else {
+        restartButton.style.display = 'none';
+      }
+    }
+
+    restartButton.addEventListener('click', () => {
+      score = 0;
+      missedAnts = 0;
+      scoreElement.textContent = `Score: ${score}`;
+      missedElement.textContent = `Missed: ${missedAnts}`;
+      modal.classList.remove('active');
+    });
 
     // Spawn ants every 1 second
     setInterval(spawnAnt, 1000);
